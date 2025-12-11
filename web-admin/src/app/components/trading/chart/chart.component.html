@@ -1,0 +1,33 @@
+<div class="chart-container">
+  <div class="chart-header">
+    <div class="chart-controls">
+      <div class="chart-type-selector">
+        <button 
+          class="control-btn" 
+          [class.active]="chartType === 'line'"
+          (click)="changeChartType('line')">
+          Line
+        </button>
+        <button 
+          class="control-btn" 
+          [class.active]="chartType === 'candlestick'"
+          (click)="changeChartType('candlestick')">
+          Candlestick
+        </button>
+      </div>
+      <div class="timeframe-selector">
+        <button 
+          *ngFor="let tf of timeframes"
+          class="control-btn small"
+          [class.active]="timeframe === tf"
+          (click)="changeTimeframe(tf)">
+          {{ tf }}
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="chart-wrapper">
+    <canvas #chartCanvas></canvas>
+  </div>
+</div>
+

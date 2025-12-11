@@ -1,0 +1,252 @@
+<div class="dashboard-container">
+  <!-- Left Sidebar -->
+  <aside class="sidebar-left">
+    <div class="sidebar-content">
+      <div class="logo">V</div>
+      <nav class="sidebar-nav">
+        <a routerLink="/dashboard" [class.active]="isActiveRoute('/dashboard')" class="nav-item">
+          <span class="nav-icon">🏠</span>
+        </a>
+        <a routerLink="/wallet" [class.active]="isActiveRoute('/wallet')" class="nav-item">
+          <span class="nav-icon">👛</span>
+        </a>
+        <a routerLink="/trading" [class.active]="isActiveRoute('/trading')" class="nav-item">
+          <span class="nav-icon">🛒</span>
+        </a>
+        <a routerLink="/calendar" [class.active]="isActiveRoute('/calendar')" class="nav-item">
+          <span class="nav-icon">📅</span>
+        </a>
+        <a routerLink="/settings" [class.active]="isActiveRoute('/settings')" class="nav-item">
+          <span class="nav-icon">⚙️</span>
+        </a>
+        <a href="#" class="nav-item" (click)="logout()" title="Logout">
+          <span class="nav-icon">🚪</span>
+        </a>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Overview Header -->
+    <div class="overview-header">
+      <div>
+        <h1 class="section-title">Overview</h1>
+        <p class="greeting">Good morning Leonardo</p>
+      </div>
+    </div>
+
+    <!-- Earning and Spending Cards -->
+    <div class="overview-cards">
+      <div class="overview-card earning-card">
+        <div class="card-header">
+          <span class="card-label">Earning</span>
+          <span class="card-change positive">{{ earningChange }}%</span>
+        </div>
+        <div class="card-amount">{{ formatCurrency(earning) }}</div>
+      </div>
+      
+      <div class="overview-card spending-card">
+        <div class="card-header">
+          <span class="card-label">Spending</span>
+          <span class="card-change positive">{{ spendingChange }}%</span>
+        </div>
+        <div class="card-amount">{{ formatCurrency(spending) }}</div>
+      </div>
+    </div>
+
+    <!-- Statistics Chart -->
+    <div class="statistics-section glass-card">
+      <div class="section-header">
+        <h2 class="section-title">Statistic</h2>
+        <div class="tabs">
+          <button 
+            [class.active]="selectedTab === 'weekly'"
+            (click)="selectTab('weekly')"
+            class="tab-btn"
+          >
+            Weekly
+          </button>
+          <button 
+            [class.active]="selectedTab === 'monthly'"
+            (click)="selectTab('monthly')"
+            class="tab-btn"
+          >
+            Monthly
+          </button>
+          <button 
+            [class.active]="selectedTab === 'yearly'"
+            (click)="selectTab('yearly')"
+            class="tab-btn"
+          >
+            Last year
+          </button>
+        </div>
+      </div>
+      
+      <div class="chart-container">
+        <div class="chart-bars">
+          <div 
+            *ngFor="let data of chartData; let i = index"
+            class="chart-bar-wrapper"
+          >
+            <div class="chart-bar-container">
+              <div 
+                class="chart-bar"
+                [style.height.%]="getChartHeight(data.value)"
+                [class.highlighted]="i === 4"
+              ></div>
+              <div class="chart-label">{{ data.date }}</div>
+              <div 
+                *ngIf="i === 4"
+                class="chart-tooltip"
+              >
+                <div class="tooltip-date">{{ getHighlightedDate() }}</div>
+                <div class="tooltip-value">{{ getHighlightedValue() }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Monthly Payment -->
+    <div class="monthly-payment-section glass-card">
+      <div class="section-header">
+        <h2 class="section-title">Monthly Payment</h2>
+        <button class="btn-add">Add +</button>
+      </div>
+      
+      <div class="payment-list">
+        <div *ngFor="let payment of payments" class="payment-item glass-card-hover">
+          <div class="payment-icon">{{ payment.icon }}</div>
+          <div class="payment-info">
+            <div class="payment-name">{{ payment.name }}</div>
+            <div class="payment-amount">{{ payment.amount }}</div>
+            <div class="payment-due">{{ payment.dueDate }}</div>
+          </div>
+          <button class="btn btn-primary payment-btn">Pay now</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Your Card Section -->
+    <div class="card-section">
+      <div class="section-header">
+        <h2 class="section-title">Your card</h2>
+        <button class="btn-add">Add card +</button>
+      </div>
+      
+      <div class="credit-card glass-card">
+        <div class="card-gradient"></div>
+        <div class="card-content">
+          <div class="card-balance">Card balance {{ formatCurrency(cardBalance) }}</div>
+          <div class="card-brand">Visa</div>
+          <div class="card-number">{{ cardNumber }}</div>
+          <div class="card-expiry">Valid until {{ cardExpiry }}</div>
+        </div>
+      </div>
+      
+      <div class="card-info glass-card">
+        <div class="info-item">
+          <span class="info-label">Card name:</span>
+          <span class="info-value">{{ cardName }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Card no:</span>
+          <span class="info-value">{{ cardNumber }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Valid until:</span>
+          <span class="info-value">{{ cardExpiry }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Marketplace Section -->
+    <div class="marketplace-section glass-card">
+      <div class="section-header">
+        <div class="tabs">
+          <button class="tab-btn active">Marketplace</button>
+          <button class="tab-btn">History</button>
+          <button class="tab-btn">Payment</button>
+        </div>
+      </div>
+      
+      <div class="marketplace-list">
+        <div *ngFor="let marketplace of marketplaces" class="marketplace-item glass-card-hover">
+          <div class="marketplace-logo">{{ marketplace.logo }}</div>
+          <div class="marketplace-name">{{ marketplace.name }}</div>
+          <button 
+            [class.connected]="marketplace.connected"
+            class="btn btn-secondary marketplace-btn"
+          >
+            {{ marketplace.connected ? 'Connected' : 'Connect' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Right Sidebar -->
+  <aside class="sidebar-right">
+    <!-- User Profile -->
+    <div class="user-profile glass-card">
+      <div class="profile-avatar">LC</div>
+      <div class="profile-info">
+        <div class="profile-name">Leonardo C</div>
+        <div class="profile-email">leonardocc@gmail.com</div>
+      </div>
+    </div>
+
+    <!-- Total Balance -->
+    <div class="balance-card glass-card">
+      <div class="balance-label">Total Balance</div>
+      <div class="balance-amount">{{ formatCurrency(totalBalance) }}</div>
+      <div class="balance-change positive">+{{ balanceChange }}%</div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+      <button class="btn btn-primary action-btn">Send</button>
+      <button class="btn btn-secondary action-btn">Receive</button>
+    </div>
+
+    <!-- Quick Transfer -->
+    <div class="quick-transfer glass-card">
+      <div class="section-title-small">Quick Transfer</div>
+      <div class="contacts-list">
+        <div *ngFor="let contact of contacts" class="contact-avatar">
+          {{ contact.avatar }}
+        </div>
+        <div class="contact-avatar add-contact">+</div>
+      </div>
+    </div>
+
+    <!-- Notifications -->
+    <div class="notifications-section glass-card">
+      <div class="section-title-small">Notifications</div>
+      <div class="notifications-list">
+        <div *ngFor="let notif of notifications" class="notification-item">
+          <div class="notification-header">
+            <div class="notification-title">{{ notif.title }}</div>
+            <div class="notification-time">{{ notif.time }}</div>
+          </div>
+          <div class="notification-message">{{ notif.message }}</div>
+          <div *ngIf="notif.action" class="notification-actions">
+            <a *ngIf="notif.type === 'payment'" href="#" class="notification-action btn btn-primary btn-small">
+              Pay now
+            </a>
+            <a *ngIf="notif.type === 'payment'" href="#" class="notification-action-link">
+              Later
+            </a>
+            <a *ngIf="notif.type !== 'payment'" href="#" class="notification-action-link">
+              {{ notif.action }}
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+

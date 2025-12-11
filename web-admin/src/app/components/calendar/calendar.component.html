@@ -1,0 +1,62 @@
+<div class="calendar-container">
+  <app-nav-sidebar></app-nav-sidebar>
+  <div class="calendar-header">
+    <h1>Transaction History</h1>
+    <div class="filter-tabs">
+      <button 
+        *ngFor="let type of filterTypes"
+        class="filter-tab"
+        [class.active]="filterType === type"
+        (click)="setFilterType(type)">
+        {{ type.charAt(0).toUpperCase() + type.slice(1) }}
+      </button>
+    </div>
+  </div>
+
+  <div class="transactions-list">
+    <div 
+      *ngFor="let transaction of getFilteredTransactions()" 
+      class="transaction-item">
+      <div class="transaction-icon">
+        {{ getTransactionIcon(transaction.type) }}
+      </div>
+      <div class="transaction-details">
+        <div class="transaction-header">
+          <span class="transaction-type">{{ transaction.type }}</span>
+          <span 
+            class="transaction-status"
+            [style.color]="getStatusColor(transaction.status)">
+            {{ transaction.status }}
+          </span>
+        </div>
+        <div class="transaction-description">{{ transaction.description }}</div>
+        <div class="transaction-date">
+          {{ transaction.date | date:'medium' }}
+        </div>
+        <div *ngIf="transaction.hash" class="transaction-hash">
+          <a [href]="getExplorerUrl() + '/tx/' + transaction.hash" target="_blank" class="explorer-link">
+            View on Explorer
+          </a>
+          <span *ngIf="transaction.confirmations !== undefined" class="confirmations">
+            {{ transaction.confirmations }} confirmations
+          </span>
+        </div>
+      </div>
+      <div class="transaction-amount">
+        <div class="amount-value">
+          {{ transaction.amount }} {{ transaction.currency }}
+        </div>
+        <div 
+          class="amount-type"
+          [class.positive]="transaction.type === 'deposit' || transaction.type === 'trade'"
+          [class.negative]="transaction.type === 'withdrawal' || transaction.type === 'transfer'">
+          {{ transaction.type === 'deposit' || transaction.type === 'trade' ? '+' : '-' }}
+        </div>
+      </div>
+    </div>
+    <div *ngIf="getFilteredTransactions().length === 0" class="empty-state">
+      No transactions found
+    </div>
+  </div>
+</div>
+

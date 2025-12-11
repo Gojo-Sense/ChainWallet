@@ -1,0 +1,225 @@
+<div class="trading-container">
+  <app-nav-sidebar></app-nav-sidebar>
+  <div class="trading-content-wrapper">
+  <!-- User Type Selection Modal -->
+  <div *ngIf="showUserTypeModal" class="modal-overlay" (click)="showUserTypeModal = false">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>Welcome to Trading Platform</h2>
+      <p>Please select your experience level:</p>
+      <div class="user-type-options">
+        <button class="user-type-btn beginner" (click)="selectUserType('beginner')">
+          <div class="icon">🎓</div>
+          <div class="title">Beginner</div>
+          <div class="description">I'm new to trading. Show me tutorials and explanations.</div>
+        </button>
+        <button class="user-type-btn professional" (click)="selectUserType('professional')">
+          <div class="icon">💼</div>
+          <div class="title">Professional</div>
+          <div class="description">I'm experienced. Take me directly to trading.</div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tutorial Overlay (Beginner Mode) -->
+  <div *ngIf="showTutorial && userType === 'beginner'" class="tutorial-overlay">
+    <div class="tutorial-content">
+      <div class="tutorial-header">
+        <span class="tutorial-progress">{{ currentTutorialStep + 1 }} / {{ tutorialSteps.length }}</span>
+        <button class="close-tutorial" (click)="skipTutorial()">✕</button>
+      </div>
+      <h3>{{ tutorialSteps[currentTutorialStep].title }}</h3>
+      <p>{{ tutorialSteps[currentTutorialStep].description }}</p>
+      <div class="tutorial-actions">
+        <button *ngIf="currentTutorialStep > 0" (click)="previousTutorialStep()">Previous</button>
+        <button (click)="nextTutorialStep()">
+          {{ currentTutorialStep === tutorialSteps.length - 1 ? 'Complete' : 'Next' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Trading Interface -->
+  <div class="trading-content" id="trading-overview">
+    <!-- Header -->
+    <div class="trading-header">
+      <h1>Trading Platform</h1>
+      <div class="balance-info">
+        <div class="balance-item">
+          <span class="label">Trading Balance</span>
+          <span class="value">${{ tradingBalance.toFixed(2) }}</span>
+        </div>
+        <div class="balance-item">
+          <span class="label">Available</span>
+          <span class="value">${{ availableBalance.toFixed(2) }}</span>
+        </div>
+        <button class="deposit-btn" (click)="openDepositForm()" id="deposit-section">Deposit</button>
+      </div>
+    </div>
+
+    <!-- Deposit Form Modal -->
+    <div *ngIf="showDepositForm" class="modal-overlay" (click)="closeDepositForm()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <h2>Deposit Funds</h2>
+        <div class="form-group">
+          <label>Amount</label>
+          <input type="number" [(ngModel)]="depositAmount" placeholder="Enter amount" min="0">
+        </div>
+        <div class="form-group">
+          <label>Payment Method</label>
+          <select [(ngModel)]="depositMethod">
+            <option value="bank">Bank Transfer</option>
+            <option value="card">Credit/Debit Card</option>
+            <option value="crypto">Cryptocurrency</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button (click)="closeDepositForm()">Cancel</button>
+          <button class="primary" (click)="submitDeposit()">Deposit</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="trading-layout">
+      <!-- Left: Trading Pairs -->
+      <div class="trading-pairs-section" id="trading-pairs">
+        <h3>Trading Pairs</h3>
+        <div class="pairs-list">
+          <div 
+            *ngFor="let pair of tradingPairs" 
+            class="pair-item"
+            [class.active]="selectedPair?.symbol === pair.symbol"
+            (click)="selectTradingPair(pair)">
+            <div class="pair-info">
+              <div class="pair-name">{{ pair.name }}</div>
+              <div class="pair-symbol">{{ pair.symbol }}</div>
+            </div>
+            <div class="pair-price">
+              <div class="price">${{ pair.price.toFixed(2) }}</div>
+              <div class="change" [class.positive]="pair.change24h > 0" [class.negative]="pair.change24h < 0">
+                {{ pair.change24h > 0 ? '+' : '' }}{{ pair.change24h.toFixed(2) }}%
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center: Trading Interface -->
+      <div class="trading-interface">
+        <!-- Price Chart -->
+        <div *ngIf="selectedPair" class="chart-section">
+          <app-chart [symbol]="selectedPair.symbol"></app-chart>
+        </div>
+
+        <div *ngIf="selectedPair" class="selected-pair-info">
+          <h2>{{ selectedPair.symbol }}/USD</h2>
+          <div class="current-price" [class.positive]="selectedPair.change24h > 0" [class.negative]="selectedPair.change24h < 0">
+            ${{ selectedPair.price.toFixed(2) }}
+            <span class="price-change">{{ selectedPair.change24h > 0 ? '+' : '' }}{{ selectedPair.change24h.toFixed(2) }}%</span>
+          </div>
+        </div>
+
+        <!-- Trade Side Selection -->
+        <div class="trade-side-selector" id="trade-side">
+          <button 
+            class="trade-btn buy" 
+            [class.active]="tradeSide === 'buy'"
+            (click)="tradeSide = 'buy'">
+            Buy
+          </button>
+          <button 
+            class="trade-btn sell" 
+            [class.active]="tradeSide === 'sell'"
+            (click)="tradeSide = 'sell'">
+            Sell
+          </button>
+        </div>
+
+        <!-- Order Type -->
+        <div class="order-type-selector" id="order-type">
+          <label>Order Type</label>
+          <select [(ngModel)]="orderType">
+            <option value="market">Market Order</option>
+            <option value="limit">Limit Order</option>
+            <option value="stop-loss">Stop-Loss Order</option>
+          </select>
+          <div *ngIf="userType === 'beginner'" class="help-text">
+            💡 Market: Executes immediately. Limit: Waits for your price.
+          </div>
+        </div>
+
+        <!-- Order Form -->
+        <div class="order-form" id="place-order">
+          <div class="form-group">
+            <label>Amount</label>
+            <input type="number" [(ngModel)]="orderAmount" placeholder="0.00" min="0" step="0.01">
+          </div>
+          <div *ngIf="orderType !== 'market'" class="form-group">
+            <label>Price</label>
+            <input type="number" [(ngModel)]="orderPrice" placeholder="0.00" min="0" step="0.01">
+          </div>
+          <div class="order-summary">
+            <div class="summary-item">
+              <span>Total</span>
+              <span>${{ (orderAmount * (orderType === 'market' ? (selectedPair?.price || 0) : orderPrice)).toFixed(2) }}</span>
+            </div>
+          </div>
+          <button class="place-order-btn" (click)="placeOrder()">Place Order</button>
+        </div>
+      </div>
+
+      <!-- Right: Orders & History -->
+      <div class="orders-section">
+        <!-- Order Book -->
+        <h3>Order Book</h3>
+        <div class="order-book">
+          <div class="order-book-asks">
+            <div *ngFor="let ask of orderBook.asks.slice(0, 5).reverse()" class="order-book-row ask">
+              <span class="price">{{ ask.price.toFixed(2) }}</span>
+              <span class="quantity">{{ ask.quantity.toFixed(4) }}</span>
+            </div>
+          </div>
+          <div class="order-book-spread" *ngIf="orderBook.bids.length > 0 && orderBook.asks.length > 0">
+            Spread: ${{ (orderBook.asks[0].price - orderBook.bids[0].price).toFixed(2) }}
+          </div>
+          <div class="order-book-bids">
+            <div *ngFor="let bid of orderBook.bids.slice(0, 5)" class="order-book-row bid">
+              <span class="price">{{ bid.price.toFixed(2) }}</span>
+              <span class="quantity">{{ bid.quantity.toFixed(4) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Trades -->
+        <h3>Live Trades</h3>
+        <div class="live-trades-list">
+          <div *ngFor="let trade of liveTrades.slice(0, 10)" class="trade-item" [class.buy]="trade.side === 'buy'" [class.sell]="trade.side === 'sell'">
+            <span class="trade-price">${{ trade.price.toFixed(2) }}</span>
+            <span class="trade-qty">{{ trade.quantity.toFixed(4) }}</span>
+            <span class="trade-time">{{ formatTime(trade.time) }}</span>
+          </div>
+          <div *ngIf="liveTrades.length === 0" class="empty-state">No recent trades</div>
+        </div>
+
+        <h3>Pending Orders</h3>
+        <div class="orders-list">
+          <div *ngFor="let order of pendingOrders" class="order-item">
+            <div class="order-info">
+              <div class="order-pair">{{ order.pair }}</div>
+              <div class="order-side" [class.buy]="order.side === 'buy'" [class.sell]="order.side === 'sell'">
+                {{ order.side.toUpperCase() }}
+              </div>
+            </div>
+            <div class="order-details">
+              <div>Amount: {{ order.amount }}</div>
+              <div>Price: ${{ order.price.toFixed(2) }}</div>
+            </div>
+          </div>
+          <div *ngIf="pendingOrders.length === 0" class="empty-state">No pending orders</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+</div>
+

@@ -1,0 +1,170 @@
+<div class="wallet-container">
+  <app-nav-sidebar></app-nav-sidebar>
+  <div class="wallet-header">
+    <h1>Wallet Management</h1>
+    <div class="wallet-actions">
+      <div class="test-mode-toggle">
+        <label class="toggle-label">
+          <input type="checkbox" [(ngModel)]="isTestMode" (change)="toggleTestMode()">
+          <span>Test Mode ({{ isTestMode ? 'Sepolia' : 'Mainnet' }})</span>
+        </label>
+      </div>
+      <button 
+        *ngIf="!connectedWallet" 
+        class="action-btn connect" 
+        (click)="connectMetaMask()"
+        [disabled]="isConnecting">
+        {{ isConnecting ? 'Connecting...' : 'Connect MetaMask' }}
+      </button>
+      <button 
+        *ngIf="connectedWallet" 
+        class="action-btn disconnect" 
+        (click)="disconnectWallet()">
+        Disconnect
+      </button>
+      <button class="action-btn send" (click)="openSendForm()" [disabled]="!connectedWallet">Send</button>
+      <button class="action-btn receive" (click)="openReceiveForm()" [disabled]="!connectedWallet">Receive</button>
+      <button class="action-btn test" (click)="generateTestWallet()">Generate Test Wallet</button>
+    </div>
+  </div>
+
+  <!-- Connected Wallet Info -->
+  <div *ngIf="connectedWallet" class="connected-wallet-info">
+    <div class="wallet-status">
+      <span class="status-label">Connected:</span>
+      <span class="wallet-address">{{ connectedWallet.address }}</span>
+      <span class="network-badge" [class.test]="isTestMode">{{ connectedWallet.network }}</span>
+    </div>
+    <div class="wallet-balance">
+      <span class="balance-label">Balance:</span>
+      <span class="balance-value">{{ parseFloat(connectedWallet.balance).toFixed(6) }} ETH</span>
+    </div>
+  </div>
+
+  <div class="wallet-layout">
+    <!-- Wallet List -->
+    <div class="wallets-section">
+      <h2>Your Wallets</h2>
+      <div class="wallets-list">
+        <div 
+          *ngFor="let wallet of wallets" 
+          class="wallet-card"
+          [class.active]="selectedWallet?.id === wallet.id"
+          (click)="selectWallet(wallet)">
+          <div class="wallet-header-card">
+            <div class="wallet-name">{{ wallet.name }}</div>
+            <div class="wallet-currency">{{ wallet.currency }}</div>
+          </div>
+          <div class="wallet-balance">{{ wallet.balance }} {{ wallet.currency }}</div>
+          <div class="wallet-address">{{ wallet.address }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Real Transaction History -->
+    <div class="wallet-details" *ngIf="connectedWallet">
+      <h2>Transaction History</h2>
+      <div class="transactions-list">
+        <div *ngFor="let tx of realTransactions" class="transaction-item">
+          <div class="tx-header">
+            <a [href]="blockchain.getExplorerUrl() + '/tx/' + tx.hash" target="_blank" class="tx-hash">
+              {{ tx.hash.substring(0, 10) }}...{{ tx.hash.substring(tx.hash.length - 8) }}
+            </a>
+            <span class="tx-status" [class.success]="tx.status === 'success'" [class.pending]="tx.status === 'pending'" [class.failed]="tx.status === 'failed'">
+              {{ tx.status }}
+            </span>
+          </div>
+          <div class="tx-details">
+            <div>From: {{ tx.from.substring(0, 10) }}...</div>
+            <div>To: {{ tx.to.substring(0, 10) }}...</div>
+            <div>Amount: {{ tx.value }} ETH</div>
+            <div *ngIf="tx.blockNumber">Block: {{ tx.blockNumber }}</div>
+            <div *ngIf="tx.confirmations !== undefined">Confirmations: {{ tx.confirmations }}</div>
+          </div>
+        </div>
+        <div *ngIf="realTransactions.length === 0" class="empty-state">
+          No transactions found
+        </div>
+      </div>
+    </div>
+
+    <!-- Selected Wallet Details -->
+    <div class="wallet-details" *ngIf="selectedWallet && !connectedWallet">
+      <h2>{{ selectedWallet.name }}</h2>
+      <div class="detail-section">
+        <div class="detail-item">
+          <span class="label">Balance</span>
+          <span class="value">{{ selectedWallet.balance }} {{ selectedWallet.currency }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Address</span>
+          <div class="address-container">
+            <span class="value address">{{ selectedWallet.address }}</span>
+            <button class="copy-btn" (click)="copyAddress()">Copy</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Send Form Modal -->
+  <div *ngIf="showSendForm" class="modal-overlay" (click)="closeSendForm()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>Send Cryptocurrency</h2>
+      <div class="form-group">
+        <label>From Wallet</label>
+        <select [(ngModel)]="selectedWallet" [value]="selectedWallet?.id">
+          <option *ngFor="let wallet of wallets" [value]="wallet.id">{{ wallet.name }} ({{ wallet.balance }} {{ wallet.currency }})</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>To Address</label>
+        <input type="text" [(ngModel)]="sendAddress" placeholder="Enter recipient address">
+      </div>
+      <div class="form-group">
+        <label>Amount (ETH)</label>
+        <input type="number" [(ngModel)]="sendAmount" placeholder="0.00" min="0" step="0.0001" (input)="estimateGasForTransaction()">
+        <span class="currency-label">ETH</span>
+      </div>
+      <div *ngIf="gasEstimate !== '0'" class="gas-info">
+        <div class="gas-item">
+          <span>Gas Estimate:</span>
+          <span>{{ gasEstimate }}</span>
+        </div>
+        <div class="gas-item">
+          <span>Gas Price:</span>
+          <span>{{ (parseFloat(gasPrice) / 1e9).toFixed(2) }} Gwei</span>
+        </div>
+        <div class="gas-item total">
+          <span>Total Cost:</span>
+          <span>{{ (sendAmount + (parseFloat(gasEstimate) * parseFloat(gasPrice) / 1e18)).toFixed(6) }} ETH</span>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button (click)="closeSendForm()">Cancel</button>
+        <button class="primary" (click)="sendCrypto()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Receive Form Modal -->
+  <div *ngIf="showReceiveForm" class="modal-overlay" (click)="closeReceiveForm()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>Receive Cryptocurrency</h2>
+      <div class="receive-info" *ngIf="connectedWallet || selectedWallet">
+        <p>Send funds to this address:</p>
+        <div class="address-display">
+          <code>{{ (connectedWallet?.address || selectedWallet?.address) }}</code>
+          <button class="copy-btn" (click)="copyAddress()">Copy Address</button>
+        </div>
+        <div class="qr-placeholder">
+          <div class="qr-code">QR Code Placeholder</div>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button (click)="closeReceiveForm()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+

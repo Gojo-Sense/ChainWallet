@@ -1,0 +1,455 @@
+<div class="settings-container">
+  <app-nav-sidebar></app-nav-sidebar>
+
+  <div class="settings-content">
+    <!-- Security Settings Section -->
+    <div class="settings-section">
+      <h2>🔒 Security Settings</h2>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Auto-lock Timeout</label>
+          <span class="setting-description">Automatically lock the wallet after inactivity</span>
+        </div>
+        <select [(ngModel)]="autoLockTimeout" (change)="onSettingChange()" class="setting-select">
+          <option value="1min">1 minute</option>
+          <option value="5min">5 minutes</option>
+          <option value="15min">15 minutes</option>
+          <option value="30min">30 minutes</option>
+          <option value="1hr">1 hour</option>
+          <option value="never">Never</option>
+        </select>
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Session Timeout</label>
+          <span class="setting-description">Automatically end session after period of inactivity</span>
+        </div>
+        <select [(ngModel)]="sessionTimeout" (change)="onSettingChange()" class="setting-select">
+          <option value="15min">15 minutes</option>
+          <option value="30min">30 minutes</option>
+          <option value="1hr">1 hour</option>
+          <option value="2hr">2 hours</option>
+          <option value="never">Never</option>
+        </select>
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Require Password for Transactions</label>
+          <span class="setting-description">Always require password confirmation before sending transactions</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" [(ngModel)]="requirePasswordForTransactions" (change)="onSettingChange()">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Show Private Keys Warning</label>
+          <span class="setting-description">Display warning before showing sensitive information</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" [(ngModel)]="showPrivateKeysWarning" (change)="onSettingChange()">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Clear Clipboard After Copy</label>
+          <span class="setting-description">Automatically clear clipboard after 30 seconds when copying sensitive data</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" [(ngModel)]="clearClipboardAfterCopy" (change)="onSettingChange()">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Wallet Management Section -->
+    <div class="settings-section">
+      <h2>💼 Wallet Management</h2>
+      <div class="setting-item" *ngIf="walletAddress">
+        <div class="setting-info">
+          <label>Connected Wallet</label>
+          <span class="setting-description">{{ walletAddress }}</span>
+          <span class="setting-description" *ngIf="walletBalance">Balance: {{ walletBalance }} ETH</span>
+        </div>
+        <div class="wallet-actions">
+          <button class="action-btn small" (click)="copyToClipboard(walletAddress!)">Copy</button>
+          <button class="action-btn small" (click)="viewOnExplorer()">View on Explorer</button>
+        </div>
+      </div>
+      <div class="setting-item" *ngIf="!walletAddress">
+        <div class="setting-info">
+          <label>No Wallet Connected</label>
+          <span class="setting-description">Connect a wallet to view details</span>
+        </div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Disconnect Wallet</label>
+          <span class="setting-description">Disconnect the currently connected wallet</span>
+        </div>
+        <button class="logout-btn" (click)="disconnectWallet()" [disabled]="!walletAddress">Disconnect</button>
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Export Wallet Info</label>
+          <span class="setting-description">Export public wallet information (address only)</span>
+        </div>
+        <button class="action-btn" (click)="showExportWarning = true" [disabled]="!walletAddress">Export</button>
+      </div>
+    </div>
+
+    <!-- Transaction Settings Section -->
+    <div class="settings-section">
+      <h2>💸 Transaction Settings</h2>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Default Slippage Tolerance</label>
+          <span class="setting-description">Default slippage tolerance for swaps (0.1% - 5%)</span>
+        </div>
+        <div class="slippage-input-group">
+          <input type="number" [(ngModel)]="defaultSlippageTolerance" (change)="onSettingChange()" class="setting-input small" min="0.1" max="5" step="0.1">
+          <span class="input-suffix">%</span>
+        </div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Transaction Timeout</label>
+          <span class="setting-description">Maximum time to wait for transaction confirmation (seconds)</span>
+        </div>
+        <input type="number" [(ngModel)]="transactionTimeout" (change)="onSettingChange()" class="setting-input" min="60" step="60">
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Auto-approve Small Transactions</label>
+          <span class="setting-description">Automatically approve transactions below threshold</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" [(ngModel)]="autoApproveSmallTransactions" (change)="onSettingChange()">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="setting-item" *ngIf="autoApproveSmallTransactions">
+        <div class="setting-info">
+          <label>Small Transaction Threshold</label>
+          <span class="setting-description">Maximum amount for auto-approval (ETH)</span>
+        </div>
+        <input type="number" [(ngModel)]="smallTransactionThreshold" (change)="onSettingChange()" class="setting-input" min="0.001" step="0.001">
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Gas Price Multiplier</label>
+          <span class="setting-description">Multiply estimated gas price by this factor (0.5x - 2x)</span>
+        </div>
+        <div class="slider-group">
+          <input type="range" [(ngModel)]="gasPriceMultiplier" (change)="onSettingChange()" class="setting-slider" min="0.5" max="2" step="0.1">
+          <span class="slider-value">{{ gasPriceMultiplier }}x</span>
+        </div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Show Transaction Details</label>
+          <span class="setting-description">Always show full transaction details before signing</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" [(ngModel)]="showTransactionDetails" (change)="onSettingChange()">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Privacy Settings Section -->
+    <div class="settings-section">
+      <h2>🔐 Privacy Settings</h2>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Clear Transaction History</label>
+          <span class="setting-description">Remove all locally stored transaction history</span>
+        </div>
+        <button class="logout-btn" (click)="showClearHistoryConfirm = true">Clear History</button>
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Analytics & Tracking</label>
+          <span class="setting-description">Enable analytics to help improve the app</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" [(ngModel)]="analyticsEnabled" (change)="onSettingChange()">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Share Usage Data</label>
+          <span class="setting-description">Share anonymous usage data for product improvement</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" [(ngModel)]="shareUsageData" (change)="onSettingChange()">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="setting-item info-item">
+        <div class="setting-info">
+          <label>IP Address Privacy</label>
+          <span class="setting-description">We only log IP addresses for security purposes. No personal data is stored or shared with third parties.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Advanced Settings Section -->
+    <div class="settings-section">
+      <h2>⚙️ Advanced Settings</h2>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Developer Mode</label>
+          <span class="setting-description">Enable developer features and debug tools</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" [(ngModel)]="developerMode" (change)="onSettingChange()">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="setting-item" *ngIf="developerMode">
+        <div class="setting-info">
+          <label>Show Console Logs</label>
+          <span class="setting-description">Display detailed console logs for debugging</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" [(ngModel)]="showConsoleLogs" (change)="onSettingChange()" [disabled]="!developerMode">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="setting-item" *ngIf="developerMode">
+        <div class="setting-info">
+          <label>Custom RPC Endpoint</label>
+          <span class="setting-description">Override default RPC endpoint (advanced users only)</span>
+        </div>
+        <input type="text" [(ngModel)]="customRpcEndpointAdvanced" (change)="onSettingChange()" class="setting-input" placeholder="https://...">
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Export Settings</label>
+          <span class="setting-description">Download your settings as a JSON file</span>
+        </div>
+        <button class="action-btn" (click)="exportSettings()">Export</button>
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Import Settings</label>
+          <span class="setting-description">Import settings from a JSON file</span>
+        </div>
+        <label class="file-upload-btn">
+          <input type="file" accept=".json" (change)="importSettings($event)" style="display: none;">
+          Import
+        </label>
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Reset All Settings</label>
+          <span class="setting-description">Reset all settings to default values</span>
+        </div>
+        <button class="logout-btn" (click)="showResetConfirm = true">Reset</button>
+      </div>
+    </div>
+
+    <!-- Notifications Section -->
+    <div class="settings-section">
+      <h2>🔔 Notifications</h2>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Enable Notifications</label>
+          <span class="setting-description">Receive push notifications for important updates</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" [(ngModel)]="notificationsEnabled" (change)="onSettingChange()">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Email Notifications</label>
+          <span class="setting-description">Receive notifications via email</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" [(ngModel)]="emailNotifications" (change)="onSettingChange()" [disabled]="!notificationsEnabled">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Push Notifications</label>
+          <span class="setting-description">Receive browser push notifications</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" [(ngModel)]="pushNotifications" (change)="onSettingChange()" [disabled]="!notificationsEnabled">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Appearance Section -->
+    <div class="settings-section">
+      <h2>🎨 Appearance</h2>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Dark Mode</label>
+          <span class="setting-description">Use dark theme</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" [(ngModel)]="darkMode" (change)="onSettingChange()">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Preferences Section -->
+    <div class="settings-section">
+      <h2>⚙️ Preferences</h2>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Language</label>
+          <span class="setting-description">Select your preferred language</span>
+        </div>
+        <select [(ngModel)]="language" (change)="onSettingChange()" class="setting-select">
+          <option value="en">English</option>
+          <option value="fr">Français</option>
+          <option value="es">Español</option>
+          <option value="de">Deutsch</option>
+        </select>
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Currency</label>
+          <span class="setting-description">Default currency for transactions</span>
+        </div>
+        <select [(ngModel)]="currency" (change)="onSettingChange()" class="setting-select">
+          <option value="USD">USD ($)</option>
+          <option value="EUR">EUR (€)</option>
+          <option value="GBP">GBP (£)</option>
+          <option value="BTC">BTC</option>
+          <option value="ETH">ETH</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Account Section -->
+    <div class="settings-section">
+      <h2>👤 Account</h2>
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Logout</label>
+          <span class="setting-description">Sign out of your account</span>
+        </div>
+        <button class="logout-btn" (click)="confirmLogout()">Logout</button>
+      </div>
+    </div>
+
+    <!-- About & Info Section -->
+    <div class="settings-section">
+      <h2>ℹ️ About & Info</h2>
+      <div class="setting-item info-item">
+        <div class="setting-info">
+          <label>App Version</label>
+          <span class="setting-description">{{ appVersion }} (Build {{ buildNumber }})</span>
+        </div>
+      </div>
+      <div class="setting-item info-item">
+        <div class="setting-info">
+          <label>Documentation</label>
+          <span class="setting-description">View user guide and documentation</span>
+        </div>
+        <a href="https://docs.example.com" target="_blank" class="external-link">View Docs</a>
+      </div>
+      <div class="setting-item info-item">
+        <div class="setting-info">
+          <label>Support & Help</label>
+          <span class="setting-description">Get help and contact support</span>
+        </div>
+        <a href="https://support.example.com" target="_blank" class="external-link">Get Support</a>
+      </div>
+      <div class="setting-item info-item">
+        <div class="setting-info">
+          <label>Terms of Service</label>
+          <span class="setting-description">Read our terms and conditions</span>
+        </div>
+        <a href="https://example.com/terms" target="_blank" class="external-link">View Terms</a>
+      </div>
+      <div class="setting-item info-item">
+        <div class="setting-info">
+          <label>Privacy Policy</label>
+          <span class="setting-description">Learn how we protect your privacy</span>
+        </div>
+        <a href="https://example.com/privacy" target="_blank" class="external-link">View Policy</a>
+      </div>
+      <div class="setting-item info-item">
+        <div class="setting-info">
+          <label>Open Source License</label>
+          <span class="setting-description">MIT License - View on GitHub</span>
+        </div>
+        <a href="https://github.com/example" target="_blank" class="external-link">GitHub</a>
+      </div>
+    </div>
+
+    <!-- Save Button -->
+    <div class="settings-actions">
+      <span class="unsaved-indicator" *ngIf="unsavedChanges">You have unsaved changes</span>
+      <button class="save-btn" (click)="saveSettings()">Save Settings</button>
+    </div>
+  </div>
+
+  <!-- Logout Confirmation Modal -->
+  <div *ngIf="showLogoutConfirm" class="modal-overlay" (click)="cancelLogout()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>Confirm Logout</h2>
+      <p>Are you sure you want to logout? You will need to sign in again to access your account.</p>
+      <div class="modal-actions">
+        <button (click)="cancelLogout()">Cancel</button>
+        <button class="primary" (click)="logout()">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clear History Confirmation Modal -->
+  <div *ngIf="showClearHistoryConfirm" class="modal-overlay" (click)="showClearHistoryConfirm = false">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>Clear Transaction History</h2>
+      <p>Are you sure you want to clear all locally stored transaction history? This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button (click)="showClearHistoryConfirm = false">Cancel</button>
+        <button class="primary" (click)="clearTransactionHistory()">Clear History</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reset Settings Confirmation Modal -->
+  <div *ngIf="showResetConfirm" class="modal-overlay" (click)="showResetConfirm = false">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>Reset All Settings</h2>
+      <p>Are you sure you want to reset all settings to their default values? This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button (click)="showResetConfirm = false">Cancel</button>
+        <button class="primary" (click)="resetSettings()">Reset Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export Wallet Warning Modal -->
+  <div *ngIf="showExportWarning" class="modal-overlay" (click)="showExportWarning = false">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>Export Wallet Information</h2>
+      <p><strong>Warning:</strong> This will export your public wallet address only. Never share your private keys with anyone!</p>
+      <p>The exported file will contain:</p>
+      <ul class="warning-list">
+        <li>Public wallet address</li>
+        <li>Network information</li>
+        <li>Export timestamp</li>
+      </ul>
+      <div class="modal-actions">
+        <button (click)="showExportWarning = false">Cancel</button>
+        <button class="primary" (click)="exportWalletInfo()">Export</button>
+      </div>
+    </div>
+  </div>
+</div>
+
