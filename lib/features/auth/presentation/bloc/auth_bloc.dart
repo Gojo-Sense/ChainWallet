@@ -10,6 +10,7 @@ import 'package:injectable/injectable.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/failures/auth_failure.dart';
 import '../../domain/repositories/i_auth_repository.dart';
+import '../../../../core/services/websocket_service.dart';
 
 part 'auth_event.dart';
 part 'auth_state.dart';
@@ -17,7 +18,7 @@ part 'auth_bloc.freezed.dart';
 
 @injectable
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  AuthBloc(this._repository) : super(const AuthState.initial()) {
+  AuthBloc(this._repository, this._webSocketService) : super(const AuthState.initial()) {
     on<CheckAuthStatus>(_onCheckAuthStatus);
     on<LoginRequested>(_onLoginRequested);
     on<RegisterRequested>(_onRegisterRequested);
@@ -25,6 +26,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   final IAuthRepository _repository;
+  final WebSocketService _webSocketService;
 
   Future<void> _onCheckAuthStatus(
     CheckAuthStatus event,
@@ -38,6 +40,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       (failure) => emit(AuthState.unauthenticated()),
       (isAuthenticated) {
         if (isAuthenticated) {
+          // Connect WebSocket when authenticated
+          _webSocketService.connect();
           emit(const AuthState.authenticated());
         } else {
           emit(const AuthState.unauthenticated());
@@ -61,6 +65,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       (failure) => emit(AuthState.failure(failure)),
       (data) {
         final user = data['user'] as UserEntity;
+        // Connect WebSocket after successful login
+        _webSocketService.connect();
         emit(AuthState.authenticated(user: user));
       },
     );
@@ -81,6 +87,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       (failure) => emit(AuthState.failure(failure)),
       (data) {
         final user = data['user'] as UserEntity;
+        // Connect WebSocket after successful registration
+        _webSocketService.connect();
         emit(AuthState.authenticated(user: user));
       },
     );
@@ -96,7 +104,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     result.fold(
       (failure) => emit(AuthState.failure(failure)),
-      (_) => emit(const AuthState.unauthenticated()),
+      (_) {
+        // Disconnect WebSocket on logout
+        _webSocketService.disconnect();
+        emit(const AuthState.unauthenticated());
+      },
     );
   }
 }

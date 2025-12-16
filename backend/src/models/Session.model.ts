@@ -50,7 +50,7 @@ Session.init(
       allowNull: false,
     },
     refreshToken: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(500), // Increased length for JWT tokens
       allowNull: false,
       unique: true,
     },

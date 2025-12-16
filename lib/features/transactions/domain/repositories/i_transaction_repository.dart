@@ -13,6 +13,9 @@ abstract class ITransactionRepository {
     int page = 1,
     int limit = 20,
   });
+
+  /// Save a transaction to storage
+  Future<void> saveTransaction(Transaction transaction);
 }
 
 

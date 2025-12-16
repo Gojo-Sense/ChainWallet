@@ -37,7 +37,7 @@ User.init(
       },
     },
     passwordHash: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(255), // Increased length for bcrypt hashes
       allowNull: false,
     },
     emailVerified: {

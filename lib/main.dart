@@ -14,6 +14,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'core/di/injection.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/lock_service.dart';
+import 'core/services/websocket_service.dart'; // Fixed import for WebSocketService
+import 'features/alerts/domain/services/alert_checker_service.dart';
 import 'config/router.dart';
 
 Future<void> main() async {
@@ -52,6 +54,14 @@ Future<void> main() async {
 
   // Initialize dependency injection
   configureDependencies();
+
+  // Initialize alert checking service
+  final alertCheckerService = getIt<AlertCheckerService>();
+  alertCheckerService.startPeriodicChecking(); // Start periodic alert checking
+  
+  // Initialize WebSocket service
+  final webSocketService = getIt<WebSocketService>();
+  // Note: WebSocket will connect when user authenticates
 
   runApp(const AetherWalletApp());
 }

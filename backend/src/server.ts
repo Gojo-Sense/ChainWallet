@@ -5,7 +5,7 @@ import compression from 'compression';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { config } from './config/env';
-import { connectDatabase } from './config/database';
+import { connectDatabase, syncDatabase } from './config/database';
 import { connectRedis } from './config/redis';
 // Import models to initialize relationships
 import './models';
@@ -69,6 +69,9 @@ const startServer = async () => {
   try {
     // Connect to database
     await connectDatabase();
+    
+    // Sync database models
+    await syncDatabase();
     
     // Connect to Redis
     await connectRedis();

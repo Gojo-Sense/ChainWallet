@@ -6,10 +6,14 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injectable/injectable.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../domain/entities/swap_entity.dart';
 import '../../domain/entities/swap_failure.dart';
 import '../../domain/repositories/i_swap_repository.dart';
+import '../../../transactions/domain/entities/transaction_entity.dart';
+import '../../../transactions/domain/repositories/i_transaction_repository.dart';
+import '../../../wallet/presentation/bloc/wallet_bloc.dart';
 
 part 'swap_event.dart';
 part 'swap_state.dart';
@@ -17,7 +21,7 @@ part 'swap_bloc.freezed.dart';
 
 @injectable
 class SwapBloc extends Bloc<SwapEvent, SwapState> {
-  SwapBloc(this._repository) : super(const SwapState.initial()) {
+  SwapBloc(this._repository, this._transactionRepository) : super(const SwapState.initial()) {
     on<LoadTokens>(_onLoadTokens);
     on<SelectFromToken>(_onSelectFromToken);
     on<SelectToToken>(_onSelectToToken);
@@ -30,6 +34,8 @@ class SwapBloc extends Bloc<SwapEvent, SwapState> {
   }
 
   final ISwapRepository _repository;
+  final ITransactionRepository _transactionRepository;
+  final _uuid = const Uuid();
 
   Future<void> _onLoadTokens(
     LoadTokens event,
@@ -177,13 +183,46 @@ class SwapBloc extends Bloc<SwapEvent, SwapState> {
         isSwapping: false,
         failure: failure,
       )),
-      (swap) => emit(state.copyWith(
-        isSwapping: false,
-        lastSwap: swap,
-        quote: null,
-        amount: 0,
-        swapHistory: [swap, ...state.swapHistory],
-      )),
+      (swap) async {
+        // Save swap transaction to transaction history
+        try {
+          final transactionStatus = switch (swap.status) {
+            SwapStatus.completed => TransactionStatus.confirmed,
+            SwapStatus.failed => TransactionStatus.failed,
+            SwapStatus.cancelled => TransactionStatus.failed,
+            _ => TransactionStatus.pending,
+          };
+
+          final transaction = Transaction(
+            id: _uuid.v4(),
+            hash: swap.txHash ?? '0x${_uuid.v4().replaceAll('-', '').substring(0, 64)}',
+            type: TransactionType.swap,
+            status: transactionStatus,
+            timestamp: swap.createdAt,
+            fromAddress: '0x0000000000000000000000000000000000000000', // Swap doesn't have from/to addresses
+            toAddress: '0x0000000000000000000000000000000000000000',
+            amount: swap.fromAmount,
+            token: swap.fromToken.symbol,
+            gasFee: swap.fee / swap.toToken.priceUsd, // Convert fee to token amount
+            toToken: swap.toToken.symbol,
+            toAmount: swap.toAmount,
+            note: 'Swapped ${swap.fromAmount.toStringAsFixed(4)} ${swap.fromToken.symbol} for ${swap.toAmount.toStringAsFixed(4)} ${swap.toToken.symbol}',
+          );
+          
+          await _transactionRepository.saveTransaction(transaction);
+        } catch (e) {
+          // Log error but don't fail the swap
+          print('Failed to save swap transaction: $e');
+        }
+
+        emit(state.copyWith(
+          isSwapping: false,
+          lastSwap: swap,
+          quote: null,
+          amount: 0,
+          swapHistory: [swap, ...state.swapHistory],
+        ));
+      },
     );
   }
 

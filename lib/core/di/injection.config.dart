@@ -22,6 +22,8 @@ import '../../features/alerts/data/repositories/alert_repository_impl.dart'
     as _i298;
 import '../../features/alerts/domain/repositories/i_alert_repository.dart'
     as _i203;
+import '../../features/alerts/domain/services/alert_checker_service.dart'
+    as _i186;
 import '../../features/alerts/presentation/bloc/alert_bloc.dart' as _i107;
 import '../../features/auth/data/datasources/auth_api.dart' as _i367;
 import '../../features/auth/data/repositories/auth_repository_impl.dart'
@@ -36,6 +38,9 @@ import '../../features/chat/presentation/bloc/chat_bloc.dart' as _i65;
 import '../../features/market/data/datasources/binance_websocket_api.dart'
     as _i224;
 import '../../features/market/data/datasources/coingecko_api.dart' as _i640;
+import '../../features/market/data/datasources/coingecko_free_api.dart'
+    as _i1050;
+import '../../features/market/data/datasources/mock_chart_api.dart' as _i257;
 import '../../features/market/data/repositories/market_repository_impl.dart'
     as _i521;
 import '../../features/market/domain/repositories/i_market_repository.dart'
@@ -72,6 +77,7 @@ import '../services/biometric_service.dart' as _i374;
 import '../services/lock_service.dart' as _i663;
 import '../services/token_storage_service.dart' as _i474;
 import '../services/web3_service.dart' as _i131;
+import '../services/websocket_service.dart' as _i555;
 
 extension GetItInjectableX on _i174.GetIt {
   // initializes the registration of main-scope dependencies inside of GetIt
@@ -88,10 +94,12 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i474.TokenStorageService(),
     );
     gh.lazySingleton<_i131.Web3Service>(() => _i131.Web3Service());
+    gh.lazySingleton<_i555.WebSocketService>(() => _i555.WebSocketService());
     gh.lazySingleton<_i224.BinanceWebSocketApi>(
       () => _i224.BinanceWebSocketApi(),
     );
     gh.lazySingleton<_i361.Dio>(() => dioModule.dio);
+    gh.lazySingleton<_i257.MockChartApi>(() => _i257.MockChartApi());
     gh.lazySingleton<_i558.FlutterSecureStorage>(
       () => secureStorageModule.secureStorage,
     );
@@ -103,6 +111,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i640.CoinGeckoApi>(
       () => _i640.CoinGeckoApi(gh<_i361.Dio>()),
+    );
+    gh.lazySingleton<_i1050.CoinGeckoFreeApi>(
+      () => _i1050.CoinGeckoFreeApi(gh<_i361.Dio>()),
     );
     gh.lazySingleton<_i710.ISwapRepository>(() => _i625.SwapRepositoryImpl());
     gh.lazySingleton<_i745.ITransactionRepository>(
@@ -121,8 +132,19 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i203.IAlertRepository>(
       () => _i298.AlertRepositoryImpl(gh<_i558.FlutterSecureStorage>()),
     );
+    gh.lazySingleton<_i490.IMarketRepository>(
+      () => _i521.MarketRepositoryImpl(
+        gh<_i640.CoinGeckoApi>(),
+        gh<_i224.BinanceWebSocketApi>(),
+        gh<_i257.MockChartApi>(),
+        gh<_i555.WebSocketService>(),
+      ),
+    );
     gh.lazySingleton<_i114.WalletLocalDatasource>(
       () => _i114.WalletLocalDatasource(gh<_i558.FlutterSecureStorage>()),
+    );
+    gh.factory<_i1064.MarketBloc>(
+      () => _i1064.MarketBloc(gh<_i490.IMarketRepository>()),
     );
     gh.factory<_i785.TransactionBloc>(
       () => _i785.TransactionBloc(gh<_i745.ITransactionRepository>()),
@@ -134,14 +156,27 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i131.Web3Service>(),
       ),
     );
-    gh.lazySingleton<_i490.IMarketRepository>(
-      () => _i521.MarketRepositoryImpl(
-        gh<_i640.CoinGeckoApi>(),
-        gh<_i224.BinanceWebSocketApi>(),
-      ),
-    );
     gh.lazySingleton<_i367.AuthApi>(
       () => _i367.AuthApi(gh<_i48.AuthInterceptor>()),
+    );
+    gh.factory<_i107.AlertBloc>(
+      () => _i107.AlertBloc(
+        gh<_i203.IAlertRepository>(),
+        gh<_i555.WebSocketService>(),
+      ),
+    );
+    gh.factory<_i151.SwapBloc>(
+      () => _i151.SwapBloc(
+        gh<_i710.ISwapRepository>(),
+        gh<_i745.ITransactionRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i186.AlertCheckerService>(
+      () => _i186.AlertCheckerService(
+        gh<_i203.IAlertRepository>(),
+        gh<_i490.IMarketRepository>(),
+        gh<_i555.WebSocketService>(),
+      ),
     );
     gh.lazySingleton<_i589.IAuthRepository>(
       () => _i153.AuthRepositoryImpl(
@@ -149,23 +184,17 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i474.TokenStorageService>(),
       ),
     );
-    gh.factory<_i151.SwapBloc>(
-      () => _i151.SwapBloc(gh<_i710.ISwapRepository>()),
-    );
-    gh.factory<_i107.AlertBloc>(
-      () => _i107.AlertBloc(gh<_i203.IAlertRepository>()),
+    gh.factory<_i797.AuthBloc>(
+      () => _i797.AuthBloc(
+        gh<_i589.IAuthRepository>(),
+        gh<_i555.WebSocketService>(),
+      ),
     );
     gh.factory<_i87.WalletBloc>(
       () => _i87.WalletBloc(gh<_i955.IWalletRepository>()),
     );
     gh.lazySingleton<_i81.IChatRepository>(
       () => _i504.ChatRepositoryImpl(gh<_i490.IMarketRepository>()),
-    );
-    gh.factory<_i1064.MarketBloc>(
-      () => _i1064.MarketBloc(gh<_i490.IMarketRepository>()),
-    );
-    gh.factory<_i797.AuthBloc>(
-      () => _i797.AuthBloc(gh<_i589.IAuthRepository>()),
     );
     gh.factory<_i65.ChatBloc>(() => _i65.ChatBloc(gh<_i81.IChatRepository>()));
     return this;

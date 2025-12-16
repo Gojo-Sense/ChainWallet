@@ -25,7 +25,8 @@ class TransactionsPage extends StatefulWidget {
 
 class _TransactionsPageState extends State<TransactionsPage> {
   final ScrollController _scrollController = ScrollController();
-  TransactionType? _selectedFilter;
+  TransactionType? _selectedTypeFilter;
+  TransactionStatus? _selectedStatusFilter;
 
   @override
   void initState() {
@@ -65,7 +66,8 @@ class _TransactionsPageState extends State<TransactionsPage> {
           child: Column(
             children: [
               _buildHeader(),
-              _buildFilters(),
+              _buildTypeFilters(),
+              _buildStatusFilters(),
               Expanded(
                 child: BlocBuilder<TransactionBloc, TransactionState>(
                   builder: (context, state) {
@@ -140,34 +142,43 @@ class _TransactionsPageState extends State<TransactionsPage> {
     ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.2, end: 0);
   }
 
-  Widget _buildFilters() {
+  Widget _buildTypeFilters() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          _buildFilterChip(null, 'All'),
+          _buildTypeFilterChip(null, 'All'),
           ...TransactionType.values.map((type) => 
-            _buildFilterChip(type, type.label),
+            _buildTypeFilterChip(type, type.label),
           ),
         ],
       ),
     ).animate().fadeIn(delay: 100.ms);
   }
 
-  Widget _buildFilterChip(TransactionType? type, String label) {
-    final isSelected = _selectedFilter == type;
+  Widget _buildStatusFilters() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          _buildStatusFilterChip(null, 'All Status'),
+          ...TransactionStatus.values.map((status) => 
+            _buildStatusFilterChip(status, status.label),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: 150.ms);
+  }
+
+  Widget _buildTypeFilterChip(TransactionType? type, String label) {
+    final isSelected = _selectedTypeFilter == type;
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        setState(() => _selectedFilter = type);
-        if (type == null) {
-          context.read<TransactionBloc>().add(const TransactionEvent.clearFilter());
-        } else {
-          context.read<TransactionBloc>().add(
-            TransactionEvent.applyFilter(TransactionFilter(type: type)),
-          );
-        }
+        setState(() => _selectedTypeFilter = type);
+        _applyFilters();
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -199,6 +210,78 @@ class _TransactionsPageState extends State<TransactionsPage> {
         ),
       ),
     );
+  }
+
+  Widget _buildStatusFilterChip(TransactionStatus? status, String label) {
+    final isSelected = _selectedStatusFilter == status;
+    final statusColor = status != null ? _getStatusColor(status) : AppColors.cyan;
+    
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        setState(() => _selectedStatusFilter = status);
+        _applyFilters();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? statusColor.withAlpha(30) : AppColors.glassBg,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? statusColor : AppColors.glassBorder,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (status != null) ...[
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? statusColor : Colors.white70,
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _applyFilters() {
+    if (_selectedTypeFilter == null && _selectedStatusFilter == null) {
+      context.read<TransactionBloc>().add(const TransactionEvent.clearFilter());
+    } else {
+      context.read<TransactionBloc>().add(
+        TransactionEvent.applyFilter(
+          TransactionFilter(
+            type: _selectedTypeFilter,
+            status: _selectedStatusFilter,
+          ),
+        ),
+      );
+    }
+  }
+
+  Color _getStatusColor(TransactionStatus status) {
+    return switch (status) {
+      TransactionStatus.confirmed => AppColors.success,
+      TransactionStatus.pending => AppColors.warning,
+      TransactionStatus.failed => AppColors.error,
+    };
   }
 
   Widget _buildEmptyState() {
@@ -532,18 +615,37 @@ class _TransactionTile extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(top: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withAlpha(30),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        transaction.status.label,
-        style: TextStyle(
-          color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.w500,
+        color: color.withAlpha(40),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withAlpha(100),
+          width: 1,
         ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            transaction.status.label.toUpperCase(),
+            style: TextStyle(
+              color: color,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
       ),
     );
   }

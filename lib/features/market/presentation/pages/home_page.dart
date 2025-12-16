@@ -402,6 +402,16 @@ class _HomePageState extends State<HomePage> {
           Expanded(
             child: NeonButton(
               onPressed: () {
+                context.push('/send');
+              },
+              label: 'Send',
+              icon: Icons.send_rounded,
+            ),
+          ),
+          AppSpacing.gapH12,
+          Expanded(
+            child: NeonButton(
+              onPressed: () {
                 context.push('/scan');
               },
               label: 'Scan',

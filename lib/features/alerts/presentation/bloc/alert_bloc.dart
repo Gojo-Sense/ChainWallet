@@ -7,18 +7,23 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
 import '../../domain/repositories/i_alert_repository.dart';
+import '../../../../core/services/websocket_service.dart'; // Added import for WebSocketService
 import 'alert_event.dart';
 import 'alert_state.dart';
 
 @injectable
 class AlertBloc extends Bloc<AlertEvent, AlertState> {
   final IAlertRepository _alertRepository;
+  final WebSocketService _webSocketService; // Added WebSocketService field
 
-  AlertBloc(this._alertRepository) : super(AlertState.initial()) {
+  AlertBloc(this._alertRepository, this._webSocketService) : super(AlertState.initial()) { // Added WebSocketService parameter
     on<LoadAlertsEvent>(_onLoadAlerts);
     on<CreateAlertEvent>(_onCreateAlert);
     on<DeleteAlertEvent>(_onDeleteAlert);
     on<ToggleAlertEvent>(_onToggleAlert);
+    
+    // Listen for alert triggers from WebSocket
+    _webSocketService.alertTriggers.listen(_onAlertTriggered);
   }
 
   Future<void> _onLoadAlerts(
@@ -103,6 +108,12 @@ class AlertBloc extends Bloc<AlertEvent, AlertState> {
         emit(state.copyWith(alerts: updatedAlerts));
       },
     );
+  }
+  
+  /// Handle alert triggered events from WebSocket
+  void _onAlertTriggered(Map<String, dynamic> alertData) {
+    // Reload alerts to reflect the triggered state
+    add(const AlertEvent.loadAlerts());
   }
 }
 

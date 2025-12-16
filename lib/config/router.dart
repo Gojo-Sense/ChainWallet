@@ -19,6 +19,7 @@ import '../features/auth/presentation/bloc/auth_bloc.dart';
 import '../features/wallet/presentation/bloc/wallet_bloc.dart';
 import '../features/wallet/presentation/pages/wallet_landing_page.dart';
 import '../features/wallet/presentation/pages/seed_display_page.dart';
+import '../features/wallet/presentation/pages/send_crypto_page.dart';
 import '../features/market/presentation/bloc/market_bloc.dart';
 import '../features/market/presentation/pages/token_detail_page.dart';
 import '../features/scan/presentation/scan_page.dart';
@@ -60,6 +61,7 @@ class AppRouter {
   static const String alerts = '/alerts';
   static const String portfolio = '/portfolio';
   static const String transactions = '/transactions';
+  static const String sendCrypto = '/send';
   static const String nftGallery = '/nft';
   static const String achievements = '/achievements';
   static const String adminDashboard = '/admin-dashboard';
@@ -303,6 +305,22 @@ class AppRouter {
           child: BlocProvider(
             create: (_) => getIt<TransactionBloc>(),
             child: const TransactionsPage(),
+          ),
+          transitionsBuilder: _slideTransition,
+        ),
+      ),
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // SEND CRYPTO PAGE
+      // ═══════════════════════════════════════════════════════════════════════
+      GoRoute(
+        path: sendCrypto,
+        name: 'sendCrypto',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: BlocProvider.value(
+            value: getIt<WalletBloc>(),
+            child: const SendCryptoPage(),
           ),
           transitionsBuilder: _slideTransition,
         ),

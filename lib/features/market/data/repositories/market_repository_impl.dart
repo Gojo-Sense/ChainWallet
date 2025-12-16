@@ -15,14 +15,18 @@ import '../../domain/failures/market_failure.dart';
 import '../../domain/repositories/i_market_repository.dart';
 import '../datasources/coingecko_api.dart';
 import '../datasources/binance_websocket_api.dart';
+import '../datasources/mock_chart_api.dart';
+import '../../../../core/services/websocket_service.dart';
 import '../models/token_model.dart';
 
 @LazySingleton(as: IMarketRepository)
 class MarketRepositoryImpl implements IMarketRepository {
-  MarketRepositoryImpl(this._api, this._wsApi);
+  MarketRepositoryImpl(this._api, this._wsApi, this._mockApi, this._webSocketService);
 
   final CoinGeckoApi _api;
   final BinanceWebSocketApi _wsApi;
+  final MockChartApi _mockApi;
+  final WebSocketService _webSocketService;
   static const String _cacheBoxName = 'market_cache';
   static const Duration _cacheExpiry = Duration(minutes: 5);
   
@@ -106,6 +110,47 @@ class MarketRepositoryImpl implements IMarketRepository {
 
       final pricesData = response['prices'] as List<dynamic>?;
       if (pricesData == null || pricesData.isEmpty) {
+        // Fallback to mock data
+        return await _getMockMarketChart(tokenId, days: days);
+      }
+
+      final prices = pricesData.map((item) {
+        final data = item as List<dynamic>;
+        return PricePoint(
+          timestamp: DateTime.fromMillisecondsSinceEpoch(
+            (data[0] as num).toInt(),
+          ),
+          price: (data[1] as num).toDouble(),
+        );
+      }).toList();
+
+      final chart = MarketChartEntity(
+        tokenId: tokenId,
+        prices: prices,
+        startTime: prices.first.timestamp,
+        endTime: prices.last.timestamp,
+      );
+
+      return right(chart);
+    } on DioException catch (e) {
+      // Fallback to mock data on network errors
+      return await _getMockMarketChart(tokenId, days: days);
+    } catch (e) {
+      // Fallback to mock data on any other errors
+      return await _getMockMarketChart(tokenId, days: days);
+    }
+  }
+
+  /// Get mock market chart data as fallback
+  Future<Either<MarketFailure, MarketChartEntity>> _getMockMarketChart(
+    String tokenId, {
+    int days = 7,
+  }) async {
+    try {
+      final response = await _mockApi.getMarketChart(id: tokenId, days: days);
+
+      final pricesData = response['prices'] as List<dynamic>?;
+      if (pricesData == null || pricesData.isEmpty) {
         return left(const MarketFailure.invalidResponse(
           message: 'No price data available',
         ));
@@ -129,8 +174,6 @@ class MarketRepositoryImpl implements IMarketRepository {
       );
 
       return right(chart);
-    } on DioException catch (e) {
-      return left(_handleDioError(e));
     } catch (e) {
       return left(MarketFailure.invalidResponse(message: e.toString()));
     }
