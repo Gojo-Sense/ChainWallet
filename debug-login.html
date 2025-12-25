@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Login</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Debug Login to Aether Wallet</h1>
+    <form id="loginForm">
+        <div>
+            <label for="email">Email:</label>
+            <input type="email" id="email" value="john@example.com" required>
+        </div>
+        <div>
+            <label for="password">Password:</label>
+            <input type="password" id="password" value="password123" required>
+        </div>
+        <button type="submit">Login</button>
+    </form>
+    <div id="result"></div>
+
+    <script>
+        $('#loginForm').submit(function(e) {
+            e.preventDefault();
+            
+            const email = $('#email').val();
+            const password = $('#password').val();
+            
+            $('#result').html('<p>Attempting login...</p>');
+            
+            $.ajax({
+                url: 'http://localhost:3000/api/auth/login',
+                method: 'POST',
+                contentType: 'application/json',
+                xhrFields: {
+                    withCredentials: false
+                },
+                data: JSON.stringify({ email, password }),
+                success: function(data, textStatus, xhr) {
+                    $('#result').html('<h2>Login Successful!</h2><pre>' + JSON.stringify(data, null, 2) + '</pre>');
+                    console.log('Success response:', data);
+                },
+                error: function(xhr, status, error) {
+                    $('#result').html('<h2>Login Failed!</h2><p>Status: ' + xhr.status + '</p><p>Error: ' + error + '</p><pre>' + JSON.stringify(xhr.responseText, null, 2) + '</pre>');
+                    console.log('Error details:', xhr, status, error);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

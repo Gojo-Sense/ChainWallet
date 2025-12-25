@@ -1,0 +1,83 @@
+spring:
+  application:
+    name: trading-backend
+  
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/aether_wallet}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  
+  jpa:
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    show-sql: ${SHOW_SQL:false}
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        use_sql_comments: true
+    open-in-view: false
+  
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+  
+  websocket:
+    allowed-origins: ${CORS_ORIGIN:http://localhost:4200}
+  
+  batch:
+    job:
+      enabled: false
+
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: on_param
+    include-exception: false
+
+logging:
+  level:
+    root: INFO
+    com.aetherwallet.trading: ${LOG_LEVEL:DEBUG}
+    org.springframework.web: INFO
+    org.hibernate.SQL: ${SHOW_SQL:false}
+    org.hibernate.type.descriptor.sql.BasicBinder: ${SHOW_SQL:false}
+
+jwt:
+  secret: ${JWT_SECRET:your-super-secret-jwt-key-change-in-production}
+  expiration: ${JWT_EXPIRES_IN:900000} # 15 minutes in milliseconds
+
+external:
+  coingecko:
+    api-url: ${COINGECKO_API_URL:https://api.coingecko.com/api/v3}
+    api-key: ${COINGECKO_API_KEY:}
+  binance:
+    ws-url: ${BINANCE_WS_URL:wss://stream.binance.com:9443}
+    rest-url: ${BINANCE_REST_URL:https://api.binance.com/api/v3}
+
+trading:
+  order:
+    min-amount: 0.0001
+    max-amount: 1000000
+    price-precision: 8
+    amount-precision: 8
+  websocket:
+    heartbeat-interval: 30000 # 30 seconds
+
