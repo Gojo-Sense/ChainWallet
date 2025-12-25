@@ -15,8 +15,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("Authentication E2E Tests")
 public class AuthenticationTest extends BaseTest {
 
-    private static final String TEST_EMAIL = "selenium-test@aetherwallet.com";
-    private static final String TEST_PASSWORD = "TestPassword123!";
+    private static final String TEST_EMAIL = "test@gmail.com";
+    private static final String TEST_PASSWORD = "test123456";
 
     private LoginPage loginPage;
     private RegisterPage registerPage;
