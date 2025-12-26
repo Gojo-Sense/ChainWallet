@@ -27,6 +27,14 @@
         <selenium.version>4.18.1</selenium.version>
         <webdrivermanager.version>5.7.0</webdrivermanager.version>
         <jacoco.minimum.coverage>0.80</jacoco.minimum.coverage>
+        <!-- SonarQube Configuration -->
+        <sonar.projectKey>aetherwallet-trading</sonar.projectKey>
+        <sonar.projectName>AetherWallet Trading Platform</sonar.projectName>
+        <sonar.host.url>http://localhost:9000</sonar.host.url>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.junit.reportPaths>${project.build.directory}/surefire-reports</sonar.junit.reportPaths>
+        <sonar.exclusions>**/entity/**,**/dto/**,**/config/**,**/external/**</sonar.exclusions>
+        <sonar.coverage.exclusions>**/entity/**,**/dto/**,**/config/**,**/external/**,**/controller/**</sonar.coverage.exclusions>
     </properties>
     
     <dependencies>
@@ -252,6 +260,13 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            
+            <!-- SonarQube Maven Plugin -->
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>3.10.0.2594</version>
             </plugin>
             
             <!-- Jacoco Plugin for Code Coverage with 80% Threshold -->

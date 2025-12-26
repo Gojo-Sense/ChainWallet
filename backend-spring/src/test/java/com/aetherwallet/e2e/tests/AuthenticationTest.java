@@ -1,16 +1,20 @@
 package com.aetherwallet.e2e.tests;
 
 import com.aetherwallet.e2e.base.BaseTest;
+import com.aetherwallet.e2e.metrics.SeleniumMetricsReporter;
 import com.aetherwallet.e2e.pages.LoginPage;
 import com.aetherwallet.e2e.pages.RegisterPage;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Selenium E2E Tests for Authentication
+ * Includes metrics collection via SeleniumMetricsReporter
  */
+@ExtendWith(SeleniumMetricsReporter.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Authentication E2E Tests")
 public class AuthenticationTest extends BaseTest {

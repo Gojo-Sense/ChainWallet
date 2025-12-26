@@ -1,8 +1,10 @@
 package com.aetherwallet.e2e.tests;
 
 import com.aetherwallet.e2e.base.BaseTest;
+import com.aetherwallet.e2e.metrics.SeleniumMetricsReporter;
 import com.aetherwallet.e2e.pages.LoginPage;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -11,7 +13,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Selenium E2E Tests for Trading Functionality
+ * Includes metrics collection via SeleniumMetricsReporter
  */
+@ExtendWith(SeleniumMetricsReporter.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Trading E2E Tests")
 public class TradingTest extends BaseTest {
